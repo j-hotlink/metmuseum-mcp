@@ -128,7 +128,9 @@ export class MetMuseumApiError extends Error {
 
 export class MetMuseumApiClient {
   private readonly departmentsUrl: string = 'https://collectionapi.metmuseum.org/public/collection/v1/departments';
-  private readonly searchUrl: string = 'https://collectionapi.metmuseum.org/public/collection/v1/search';
+  // The v1 search endpoint was retired on 2026-10-01. v1.1 is Elastic-backed
+  // and paginates with `offset` + `limit`; object lookups remain on v1.
+  private readonly searchUrl: string = 'https://collectionapi.metmuseum.org/public/collection/v1.1/search';
   private readonly objectBaseUrl: string = 'https://collectionapi.metmuseum.org/public/collection/v1/objects/';
   private readonly requestTimeoutMs: number = getMetApiTimeoutMs();
   private readonly departmentsCacheTtlMs: number = getDepartmentsCacheTtlMs();
@@ -172,6 +174,8 @@ export class MetMuseumApiClient {
     geoLocation,
     dateBegin,
     dateEnd,
+    offset,
+    limit,
   }: {
     q: string;
     hasImages?: boolean;
@@ -185,6 +189,8 @@ export class MetMuseumApiClient {
     geoLocation?: string;
     dateBegin?: number;
     dateEnd?: number;
+    offset?: number;
+    limit?: number;
   }): Promise<z.infer<typeof SearchResponseSchema>> {
     if ((dateBegin === undefined) !== (dateEnd === undefined)) {
       throw new MetMuseumApiError(
@@ -228,6 +234,12 @@ export class MetMuseumApiClient {
     }
     if (typeof dateEnd === 'number') {
       url.searchParams.set('dateEnd', dateEnd.toString());
+    }
+    if (typeof offset === 'number') {
+      url.searchParams.set('offset', offset.toString());
+    }
+    if (typeof limit === 'number') {
+      url.searchParams.set('limit', limit.toString());
     }
     return await this.fetchAndParse(url.toString(), SearchResponseSchema, 'search');
   }

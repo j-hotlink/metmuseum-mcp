@@ -96,7 +96,7 @@ export class SearchMuseumObjectsTool {
         pageSize,
       } = parsedInput.data;
 
-      const searchResult = await this.apiClient.searchObjects({
+      const searchFilters = {
         q,
         hasImages,
         title,
@@ -109,9 +109,15 @@ export class SearchMuseumObjectsTool {
         geoLocation,
         dateBegin,
         dateEnd,
+      };
+
+      const searchResult = await this.apiClient.searchObjects({
+        ...searchFilters,
+        offset: (page - 1) * pageSize,
+        limit: pageSize,
       });
 
-      if (searchResult.total === 0 || !searchResult.objectIDs) {
+      if (searchResult.total === 0) {
         const structuredContent: SearchMuseumObjectsStructuredContent = {
           total: 0,
           page: 1,
@@ -127,11 +133,17 @@ export class SearchMuseumObjectsTool {
       }
 
       const total = searchResult.total;
-      const allObjectIds = searchResult.objectIDs;
       const totalPages = Math.max(1, Math.ceil(total / pageSize));
       const safePage = Math.min(page, totalPages);
-      const start = (safePage - 1) * pageSize;
-      const objectIDs = allObjectIds.slice(start, start + pageSize);
+      let objectIDs = searchResult.objectIDs;
+      if (safePage !== page || !objectIDs) {
+        const lastPageResult = await this.apiClient.searchObjects({
+          ...searchFilters,
+          offset: (safePage - 1) * pageSize,
+          limit: pageSize,
+        });
+        objectIDs = lastPageResult.objectIDs ?? [];
+      }
       const text = `Total objects found: ${total}\nPage: ${safePage}/${totalPages}\nObject IDs: ${objectIDs.join(', ')}`;
       const structuredContent: SearchMuseumObjectsStructuredContent = {
         total,

@@ -42,7 +42,8 @@ export const DEFAULT_SEARCH_PAGE_SIZE = 12;
 export const DEFAULT_SEARCH_TOOL_PAGE_SIZE = 24;
 
 /**
- * Maximum page size allowed by the Met Museum API.
+ * Maximum page size exposed by the search-museum-objects tool.
+ * The v1.1 search API accepts larger pages, but this keeps responses bounded.
  */
 export const MAX_SEARCH_PAGE_SIZE = 100;
 
